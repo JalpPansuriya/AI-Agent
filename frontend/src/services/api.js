@@ -88,8 +88,8 @@ export const chatAPI = {
     return response.data;
   },
   getMessages: async (sessionId) => {
-    const response = await api.get(`/api/v1/chat/sessions/${sessionId}`);
-    return response.data.messages || [];
+    const response = await api.get(`/api/v1/chat/sessions/${sessionId}/messages`);
+    return response.data;
   },
   sendMessage: async (sessionId, content) => {
     const response = await api.post(`/api/v1/chat/sessions/${sessionId}/messages`, { content });
