@@ -62,6 +62,22 @@ async def get_session_history(
         db, session_id=session_id, user_id=current_user.id
     )
 
+@router.get("/chat/sessions/{session_id}/messages")
+async def get_session_messages(
+    session_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all messages for a chat session."""
+    from app.repositories import message_repo
+    session = await session_repo.get_session_by_id(db, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if session.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access forbidden")
+    messages = await message_repo.get_messages(db, session_id=session_id)
+    return messages
+
 @router.delete(
     "/chat/sessions/{session_id}",
     status_code=status.HTTP_204_NO_CONTENT,
