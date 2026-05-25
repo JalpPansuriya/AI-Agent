@@ -1,6 +1,7 @@
 import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from loguru import logger
 
 from app.core.database import get_db
 from app.core.security import decode_access_token
@@ -94,10 +95,32 @@ async def websocket_chat(
                 total_tokens=0,
             )
 
-            # 9. Send completion done signal
+            # 9. Generate product recommendations based on chat context
+            recommendations = []
+            try:
+                from app.services import recommendation_service
+                recs = await recommendation_service.get_recommendations(
+                    db, session_id=session_id, user_id=user_id
+                )
+                # Serialize product objects to dicts for JSON transport
+                for r in recs:
+                    if hasattr(r, "name"):
+                        recommendations.append({
+                            "name": r.name,
+                            "description": r.description,
+                            "price": f"${r.price:.2f}" if r.price else None,
+                        })
+                    elif isinstance(r, dict):
+                        recommendations.append(r)
+            except Exception as e:
+                logger.warning(f"Failed to generate recommendations for WS: {e}")
+
+            # 10. Send completion done signal with full content and recommendations
             await websocket.send_json({
                 "done": True,
                 "message_id": str(assistant_message.id),
+                "full_content": full_response_text,
+                "recommendations": recommendations,
                 "total_tokens": 0,
             })
 

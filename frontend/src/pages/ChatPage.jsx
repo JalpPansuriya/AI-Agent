@@ -91,42 +91,80 @@ export default function ChatPage() {
   const handleSend = async (content) => {
     if (!content.trim() || !activeSession || loading) return;
     setError(null);
-    const tempId = 'temp-' + Date.now();
-    setMessages(prev => [...prev, { id: tempId, role: 'user', content }]);
     setLoading(true);
-    try {
-      const response = await chatAPI.sendMessage(activeSession.id, content);
-      setMessages(prev => [
-        ...prev.filter(m => m.id !== tempId),
-        { role: 'user', content },
-        { 
-          id: response.id,
-          role: 'assistant', 
-          content: response.content, 
-          recommendations: response.recommendations || []
-        }
-      ]);
 
-      if (!activeSession.title || activeSession.title === 'New Chat') {
-        const newTitle = content.slice(0, 30) + (content.length > 30 ? '...' : '');
-        await chatAPI.updateSession(activeSession.id, newTitle);
-        setSessions(prev => prev.map(s => 
-          s.id === activeSession.id ? { ...s, title: newTitle } : s
+    const token = localStorage.getItem('token');
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//localhost:8000/api/v1/ws/chat/${activeSession.id}?token=${token}`;
+    const ws = new WebSocket(wsUrl);
+
+    // Add user message immediately
+    const userMsg = { id: Date.now(), role: 'user', content };
+    setMessages(prev => [...prev, userMsg]);
+
+    // Add empty assistant message that will be filled as chunks arrive
+    const assistantId = Date.now() + 1;
+    setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '', recommendations: [] }]);
+
+    let fullContent = '';
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ content }));
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.error) {
+        setError(data.error);
+        setLoading(false);
+        setMessages(prev => prev.filter(m => m.id !== assistantId));
+        ws.close();
+        return;
+      }
+
+      if (data.chunk) {
+        fullContent += data.chunk;
+        setMessages(prev => prev.map(m =>
+          m.id === assistantId
+            ? { ...m, content: fullContent }
+            : m
         ));
-        setActiveSession(prev => ({ ...prev, title: newTitle }));
       }
-    } catch (err) {
-      console.error('[handleSend] Error:', err);
-      setMessages(prev => prev.filter(m => m.id !== tempId));
-      if (err.response?.status === 429) {
-        setError('Rate limit reached. Please wait a moment and try again.');
-      } else if (err.response?.status === 400) {
-        setError('Invalid request. Please try again.');
-      } else {
-        setError('Failed to send message. Please try again.');
+
+      if (data.done) {
+        setMessages(prev => prev.map(m =>
+          m.id === assistantId
+            ? { ...m, content: data.full_content || fullContent, recommendations: data.recommendations || [] }
+            : m
+        ));
+        setLoading(false);
+        ws.close();
+
+        // Update session title if needed
+        if (!activeSession.title || activeSession.title === 'New Chat') {
+          const newTitle = content.slice(0, 30) + (content.length > 30 ? '...' : '');
+          chatAPI.updateSession(activeSession.id, newTitle).then(() => {
+            setSessions(prev => prev.map(s =>
+              s.id === activeSession.id ? { ...s, title: newTitle } : s
+            ));
+            setActiveSession(prev => ({ ...prev, title: newTitle }));
+          });
+        }
       }
-    }
-    setLoading(false);
+    };
+
+    ws.onerror = () => {
+      setError('Connection error. Please try again.');
+      setLoading(false);
+      setMessages(prev => prev.filter(m => m.id !== assistantId));
+    };
+
+    ws.onclose = (event) => {
+      if (event.code !== 1000 && event.code !== 1001) {
+        setLoading(false);
+      }
+    };
   };
 
   return (
