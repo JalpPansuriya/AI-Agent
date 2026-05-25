@@ -95,7 +95,7 @@ export default function ChatPage() {
 
     const token = localStorage.getItem('token');
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//localhost:8000/api/v1/ws/chat/${activeSession.id}?token=${token}`;
+    const wsUrl = `ws://localhost:5173/api/v1/ws/chat/${activeSession.id}?token=${token}`;
     const ws = new WebSocket(wsUrl);
 
     // Add user message immediately
