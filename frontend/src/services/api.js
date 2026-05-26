@@ -39,7 +39,9 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
       try {
-        const tokenData = await authAPI.refresh(refreshToken);
+        const response = await api.post('/api/v1/auth/refresh', 
+          { refresh_token: refreshToken });
+        const tokenData = response.data;
         const newAccessToken = tokenData.access_token;
         const newRefreshToken = tokenData.refresh_token;
 
