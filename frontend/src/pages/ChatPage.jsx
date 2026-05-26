@@ -15,6 +15,25 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const hasInitialized = useRef(false);
 
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState('');
+
+  const handleTitleClick = () => {
+    setTitleInput(activeSession.title || '');
+    setEditingTitle(true);
+  };
+
+  const handleTitleSave = async () => {
+    if (titleInput.trim() && titleInput !== activeSession.title) {
+      await chatAPI.updateSession(activeSession.id, titleInput.trim());
+      setSessions(prev => prev.map(s =>
+        s.id === activeSession.id ? { ...s, title: titleInput.trim() } : s
+      ));
+      setActiveSession(prev => ({ ...prev, title: titleInput.trim() }));
+    }
+    setEditingTitle(false);
+  };
+
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
@@ -213,7 +232,27 @@ export default function ChatPage() {
         {activeSession ? (
           <>
             <div className="bg-[#1A1A1F] border-b border-[#2E2E35] px-6 py-4">
-              <h2 className="text-white font-medium">{activeSession.title || 'Untitled Chat'}</h2>
+              {editingTitle ? (
+                <input
+                  autoFocus
+                  value={titleInput}
+                  onChange={(e) => setTitleInput(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleTitleSave();
+                    if (e.key === 'Escape') setEditingTitle(false);
+                  }}
+                  className="bg-transparent text-white font-medium border-b border-gray-500 outline-none w-full max-w-xs"
+                />
+              ) : (
+                <h2
+                  onClick={handleTitleClick}
+                  className="text-white font-medium cursor-pointer hover:text-gray-300 transition-colors"
+                  title="Click to rename"
+                >
+                  {activeSession.title || 'Untitled Chat'}
+                </h2>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
