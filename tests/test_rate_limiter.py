@@ -54,15 +54,16 @@ async def test_auth_rate_limiting(client: AsyncClient, db):
     assert int(response.headers["Retry-After"]) >= 0
     assert int(response.headers["X-RateLimit-Reset"]) > 0
 
-    # Verify request logs in DB
+    # Verify request logs in DB — filter to this test's endpoint only
     result = await db.execute(select(RequestLog))
     logs = list(result.scalars().all())
-    # Should have 11 logs (10 unauthorized + 1 rate limited)
-    assert len(logs) == 11
+    login_logs = [l for l in logs if l.endpoint == "/api/v1/auth/login"]
+    # Should have exactly 11 login logs (10 unauthorized + 1 rate limited)
+    assert len(login_logs) == 11
     
-    rate_limit_logs = [l for l in logs if l.status_code == 429]
+    rate_limit_logs = [l for l in login_logs if l.status_code == 429]
     assert len(rate_limit_logs) == 1
-    for log in logs:
+    for log in login_logs:
         assert log.endpoint == "/api/v1/auth/login"
         assert log.method == "POST"
         assert log.duration_ms >= 0

@@ -62,13 +62,18 @@ async def get_session_history(
         db, session_id=session_id, user_id=current_user.id
     )
 
-@router.get("/chat/sessions/{session_id}/messages")
+@router.get(
+    "/chat/sessions/{session_id}/messages",
+    response_model=List[MessageResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List messages in a session",
+    description="Returns all messages in chronological order for a session scoped to the authenticated user."
+)
 async def get_session_messages(
     session_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get all messages for a chat session."""
     from app.repositories import message_repo
     session = await session_repo.get_session_by_id(db, session_id)
     if not session:
@@ -113,11 +118,17 @@ async def send_message(
     http_request.state.tokens_used = assistant_message.total_tokens
     return assistant_message
 
-@router.put("/chat/sessions/{session_id}")
+@router.put(
+    "/chat/sessions/{session_id}",
+    response_model=SessionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update a chat session",
+    description="Updates the title of a chat session. Only the session owner may rename it."
+)
 async def update_session(
     session_id: uuid.UUID,
     data: dict,
-    current_user = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     session = await session_repo.get_session(db, session_id, current_user.id)

@@ -56,7 +56,17 @@ async def lifespan(app: FastAPI):
         print(f"Seeding warning (non-fatal): {e}")
     yield
 
-app = FastAPI(title="AI Support Engine", lifespan=lifespan)
+app = FastAPI(
+    title="AI Customer Support & Recommendation Engine",
+    description=(
+        "Production-ready AI microservice for customer support with product recommendations, "
+        "real-time streaming, and admin analytics."
+    ),
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan,
+)
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,

@@ -15,7 +15,8 @@ router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_cu
     "/analytics",
     response_model=PlatformStatsResponse,
     status_code=status.HTTP_200_OK,
-    summary="Get platform statistics"
+    summary="Get platform statistics",
+    description="Retrieve platform-wide usage statistics including total users, active sessions, messages sent, and estimated LLM cost."
 )
 async def get_platform_analytics(db: AsyncSession = Depends(get_db)):
     """Retrieve platform usage statistics including user count, active sessions, and estimated cost."""
@@ -26,7 +27,8 @@ async def get_platform_analytics(db: AsyncSession = Depends(get_db)):
     "/analytics/users",
     response_model=List[UserStatsResponse],
     status_code=status.HTTP_200_OK,
-    summary="Get user-specific metrics"
+    summary="Get user-specific metrics",
+    description="Retrieve per-user breakdown of message count, token usage, and last active timestamp. Useful for identifying power users."
 )
 async def get_user_analytics(db: AsyncSession = Depends(get_db)):
     """Retrieve message and token count per user, along with their last active timestamp."""
@@ -37,7 +39,8 @@ async def get_user_analytics(db: AsyncSession = Depends(get_db)):
     "/analytics/tokens",
     response_model=TokenStatsResponse,
     status_code=status.HTTP_200_OK,
-    summary="Get token statistics and cumulative cost"
+    summary="Get token statistics and cumulative cost",
+    description="Retrieve aggregate prompt and completion token counts alongside a cumulative cost estimate computed from LLM pricing rates."
 )
 async def get_token_analytics(db: AsyncSession = Depends(get_db)):
     """Retrieve token counts and cumulative cost calculated from LLM responses."""
@@ -48,7 +51,8 @@ async def get_token_analytics(db: AsyncSession = Depends(get_db)):
     "/logs",
     response_model=List[LogResponse],
     status_code=status.HTTP_200_OK,
-    summary="Get filterable request logs"
+    summary="Get filterable request logs",
+    description="Retrieve recent API request logs with optional filters by endpoint path, HTTP status code, or user UUID. Supports pagination via the `limit` parameter."
 )
 async def get_logs(
     endpoint: Optional[str] = Query(None, description="Filter logs by endpoint"),
@@ -67,7 +71,8 @@ async def get_logs(
     "/users",
     response_model=List[UserResponse],
     status_code=status.HTTP_200_OK,
-    summary="Get all users"
+    summary="Get all users",
+    description="Retrieve a list of all registered users including their role and metadata. Hashed passwords are excluded from the response."
 )
 async def get_users(db: AsyncSession = Depends(get_db)):
     """Retrieve a list of all registered users. Excludes hashed passwords."""
