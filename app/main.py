@@ -70,7 +70,7 @@ app.include_router(recommendations.router, prefix="/api/v1")
 app.include_router(products.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"status": "healthy", "service": "AI Support Engine"}
 
