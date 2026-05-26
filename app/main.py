@@ -50,7 +50,10 @@ async def lifespan(app: FastAPI):
     finally:
         await migration_engine.dispose()
 
-    await seed_products()
+    try:
+        await seed_products()
+    except Exception as e:
+        print(f"Seeding warning (non-fatal): {e}")
     yield
 
 app = FastAPI(title="AI Support Engine", lifespan=lifespan)
