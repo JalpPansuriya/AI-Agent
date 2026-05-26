@@ -32,15 +32,24 @@ if sentry_dsn:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from app.core.database import engine
     from app.models.models import Base
+    from sqlalchemy.ext.asyncio import create_async_engine
 
-    # Run DB migrations/table creation on startup using SQLAlchemy directly
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    print("Database tables created/verified")
+    db_url = settings.DATABASE_URL
+    migration_engine = create_async_engine(
+        db_url,
+        connect_args={"prepared_statement_cache_size": 0},
+        echo=False,
+    )
+    try:
+        async with migration_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("Database tables created/verified")
+    except Exception as e:
+        print(f"DB migration warning: {e}")
+    finally:
+        await migration_engine.dispose()
 
-    # Run DB seeding on startup
     await seed_products()
     yield
 
