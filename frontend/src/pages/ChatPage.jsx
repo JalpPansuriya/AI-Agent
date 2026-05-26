@@ -119,8 +119,8 @@
       setLoading(true);
 
       const token = localStorage.getItem('token');
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `ws://localhost:5173/api/v1/ws/chat/${activeSession.id}?token=${token}`;
+      const wsBase = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+      const wsUrl = `${wsBase}/api/v1/ws/chat/${activeSession.id}?token=${token}`;
       const ws = new WebSocket(wsUrl);
 
       // Add user message immediately
