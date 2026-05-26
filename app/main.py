@@ -185,6 +185,11 @@ async def seed_products(db: Optional[AsyncSession] = None):
             await _run_seeding(db)
 
 
+@app.get("/")
+async def health_check():
+    return {"status": "healthy", "service": "AI Support Engine"}
+
+
 @app.get("/health")
 async def health(db: AsyncSession = Depends(get_db)):
     # Test database connectivity
