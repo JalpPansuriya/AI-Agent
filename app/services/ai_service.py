@@ -16,12 +16,22 @@ if settings.GEMINI_API_KEY:
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
     )
 
+# Initialize Groq client using the OpenAI-compatible endpoint
+groq_client = None
+if settings.GROQ_API_KEY:
+    groq_client = AsyncOpenAI(
+        api_key=settings.GROQ_API_KEY,
+        base_url="https://api.groq.com/openai/v1"
+    )
+
 def get_client_and_model() -> Tuple[AsyncOpenAI, str]:
     """Helper to select active client and model based on the config settings."""
     import sys
     if "pytest" in sys.modules:
         return client, settings.OPENAI_MODEL
-        
+
+    if settings.AI_PROVIDER == "groq" and groq_client:
+        return groq_client, settings.GROQ_MODEL
     if settings.AI_PROVIDER == "gemini" and gemini_client:
         return gemini_client, settings.GEMINI_MODEL
     return client, settings.OPENAI_MODEL

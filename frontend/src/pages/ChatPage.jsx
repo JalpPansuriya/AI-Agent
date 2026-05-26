@@ -54,7 +54,13 @@ export default function ChatPage() {
   const loadMessages = async (sessionId) => {
     try {
       const data = await chatAPI.getMessages(sessionId);
-      setMessages(data);
+      const normalized = data.map(m => ({
+        id: m.id,
+        role: m.role,
+        content: m.content || '',
+        recommendations: m.recommendations || []
+      }));
+      setMessages(normalized);
     } catch (err) {
       console.error(err);
     }

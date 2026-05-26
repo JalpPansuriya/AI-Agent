@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     AI_PROVIDER: str = "openai"
     GEMINI_API_KEY: Optional[str] = None
     GEMINI_MODEL: str = "gemini-1.5-flash"
+    GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "llama3-8b-8192"
 
     RATE_LIMIT_CHAT: int = 30
     RATE_LIMIT_AUTH: int = 10
