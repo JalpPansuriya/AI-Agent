@@ -32,19 +32,13 @@ if sentry_dsn:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import subprocess
-    import sys
+    from app.core.database import engine
+    from app.models.models import Base
 
-    # Run migrations on startup
-    result = subprocess.run(
-        [sys.executable, "-m", "alembic", "upgrade", "head"],
-        capture_output=True,
-        text=True
-    )
-    if result.returncode != 0:
-        print(f"Migration failed: {result.stderr}")
-    else:
-        print(f"Migrations applied: {result.stdout}")
+    # Run DB migrations/table creation on startup using SQLAlchemy directly
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("Database tables created/verified")
 
     # Run DB seeding on startup
     await seed_products()
