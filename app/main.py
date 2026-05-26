@@ -17,12 +17,17 @@ logger.remove()
 logger.add(sys.stdout, format="{message}", serialize=True)
 
 # Configure Sentry Integration
-if settings.SENTRY_DSN:
+import os
+sentry_dsn = os.getenv("SENTRY_DSN", "")
+if sentry_dsn:
     import sentry_sdk
-    sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
-        environment=settings.APP_ENV
-    )
+    try:
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            send_default_pii=True,
+        )
+    except Exception as e:
+        print(f"Sentry init failed: {e}")
 
 
 @asynccontextmanager
