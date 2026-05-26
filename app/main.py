@@ -61,6 +61,11 @@ app.include_router(recommendations.router, prefix="/api/v1")
 app.include_router(products.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
 
+@app.get("/")
+async def root():
+    return {"status": "healthy", "service": "AI Support Engine"}
+
+
 async def _run_seeding(db: AsyncSession):
     """Seed 12 default products across Laptops, Phones, and Accessories."""
     from app.repositories import product_repo
@@ -183,12 +188,6 @@ async def seed_products(db: Optional[AsyncSession] = None):
         existing_products = await product_repo.list_products(db)
         if not existing_products:
             await _run_seeding(db)
-
-
-@app.get("/")
-async def health_check():
-    return {"status": "healthy", "service": "AI Support Engine"}
-
 
 @app.get("/health")
 async def health(db: AsyncSession = Depends(get_db)):
