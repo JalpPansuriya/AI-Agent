@@ -72,18 +72,22 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     except StopAsyncIteration:
                         pass
                 else:
-                    # In production, offload logging to Celery background task asynchronously!
-                    from app.workers.tasks import log_request
-                    log_request.delay(
-                        request_id=request_id,
-                        user_id=str(user_id) if user_id else None,
-                        endpoint=endpoint,
-                        method=method,
-                        status_code=status_code,
-                        duration_ms=duration_ms,
-                        tokens_used=tokens_used,
-                        error_message=error_message
-                    )
+                    # In production, save log directly to DB (no Celery worker on Render)
+                    try:
+                        async with AsyncSessionLocal() as db:
+                            await create_request_log(
+                                db=db,
+                                request_id=request_id,
+                                user_id=user_id,
+                                endpoint=endpoint,
+                                method=method,
+                                status_code=status_code,
+                                duration_ms=duration_ms,
+                                tokens_used=tokens_used,
+                                error_message=error_message
+                            )
+                    except Exception as prod_log_err:
+                        logger.error(f"Failed to save production request log: {prod_log_err}")
             except Exception as db_err:
                 logger.error(f"Failed to save request log: {db_err}")
                 
