@@ -25,6 +25,41 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (!refreshToken) {
+        if (typeof window.__authLogout === 'function') {
+          window.__authLogout();
+        }
+        return Promise.reject(error);
+      }
+      try {
+        const tokenData = await authAPI.refresh(refreshToken);
+        const newAccessToken = tokenData.access_token;
+        const newRefreshToken = tokenData.refresh_token;
+
+        localStorage.setItem('token', newAccessToken);
+        localStorage.setItem('refresh_token', newRefreshToken);
+        setAuthToken(newAccessToken);
+
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        if (typeof window.__authLogout === 'function') {
+          window.__authLogout();
+        }
+        return Promise.reject(refreshError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authAPI = {
   login: async (email, password) => {
     const response = await api.post('/api/v1/auth/login', { email, password });
@@ -36,6 +71,10 @@ export const authAPI = {
   },
   me: async () => {
     const response = await api.get('/api/v1/auth/me');
+    return response.data;
+  },
+  refresh: async (refresh_token) => {
+    const response = await api.post('/api/v1/auth/refresh', { refresh_token });
     return response.data;
   },
 };

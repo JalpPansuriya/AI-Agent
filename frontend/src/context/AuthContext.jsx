@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
       setToken(accessToken);
       setAuthToken(accessToken);
       localStorage.setItem('token', accessToken);
+      localStorage.setItem('refresh_token', tokenData.refresh_token);
 
       // 3. Fetch user profile
       const userProfile = await authAPI.me();
@@ -47,6 +48,7 @@ export const AuthProvider = ({ children }) => {
       setAuthToken(null);
       setUser(null);
       localStorage.removeItem('token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
       const message = err.response?.data?.detail || 'Invalid email or password';
       setError(message);
@@ -61,8 +63,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setError(null);
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
   };
+
+  React.useEffect(() => {
+    window.__authLogout = logout;
+    return () => { delete window.__authLogout; };
+  }, [logout]);
 
   const getToken = () => token;
 
