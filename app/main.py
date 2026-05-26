@@ -32,6 +32,20 @@ if sentry_dsn:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import subprocess
+    import sys
+
+    # Run migrations on startup
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        print(f"Migration failed: {result.stderr}")
+    else:
+        print(f"Migrations applied: {result.stdout}")
+
     # Run DB seeding on startup
     await seed_products()
     yield
