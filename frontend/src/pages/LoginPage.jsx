@@ -12,6 +12,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const validatePassword = (pwd) => {
+    if (pwd.length < 8) return 'Password must be at least 8 characters long.';
+    if (!/[A-Z]/.test(pwd)) return 'Password must contain at least one uppercase letter.';
+    if (!/\d/.test(pwd)) return 'Password must contain at least one number.';
+    return null;
+  };
+
+  const parseBackendError = (err) => {
+    const detail = err.response?.data?.detail;
+    if (!detail) return 'Something went wrong.';
+    // Pydantic v2 returns an array of { msg, loc, type } objects
+    if (Array.isArray(detail)) {
+      return detail.map((e) => e.msg || JSON.stringify(e)).join(' ');
+    }
+    if (typeof detail === 'string') return detail;
+    return JSON.stringify(detail);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -20,6 +38,12 @@ export default function LoginPage() {
     if (isSignup) {
       if (!fullName.trim() || !email || !password) {
         setError('Please fill in all fields.');
+        setLoading(false);
+        return;
+      }
+      const pwdError = validatePassword(password);
+      if (pwdError) {
+        setError(pwdError);
         setLoading(false);
         return;
       }
@@ -32,10 +56,7 @@ export default function LoginPage() {
         }
       } catch (err) {
         console.error(err);
-        const message = err.response?.data?.detail?.[0]?.msg
-          || err.response?.data?.detail
-          || 'Something went wrong';
-        setError(typeof message === 'string' ? message : JSON.stringify(message));
+        setError(parseBackendError(err));
       }
     } else {
       if (!email || !password) {
