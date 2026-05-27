@@ -283,7 +283,14 @@
                           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recommendations</p>
                           {msg.recommendations.map((rec, i) => (
                             <div key={i} className="bg-[#2E2E35] rounded-xl p-2 border border-[#444444]">
-                              <p className="font-medium text-gray-200 text-xs">{rec.name}</p>
+                              <a
+                                href={`https://www.google.com/search?q=${encodeURIComponent(rec.name)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-blue-400 hover:underline text-xs"
+                              >
+                                {rec.name}
+                              </a>
                               <p className="text-gray-500 text-xs mt-1">{rec.description}</p>
                               {rec.price && <p className="text-blue-400 text-xs font-semibold mt-1">{rec.price}</p>}
                             </div>
